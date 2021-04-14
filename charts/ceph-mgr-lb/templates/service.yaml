@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ceph-mgr-lb.fullname" . }}
+  labels:
+    {{- include "ceph-mgr-lb.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.dashboardPort }}
+      targetPort: dashboard
+      protocol: TCP
+      name: http-dashboard
+    - port: {{ .Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+      name: http-metrics
+    - port: {{ .Values.service.statsPort }}
+      targetPort: stats
+      protocol: TCP
+      name: http-stats
+    - port: {{ .Values.service.rgwPort }}
+      targetPort: rgw
+      protocol: TCP
+      name: http-rgw
+  selector:
+    {{- include "ceph-mgr-lb.selectorLabels" . | nindent 4 }}

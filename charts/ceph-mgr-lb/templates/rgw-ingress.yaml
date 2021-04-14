@@ -1,0 +1,41 @@
+{{- if .Values.rgwIngress.enabled -}}
+{{- $fullName := include "ceph-mgr-lb.fullname" . -}}
+{{- $svcPort := .Values.service.rgwPort -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-rgw
+  labels:
+    {{- include "ceph-mgr-lb.labels" . | nindent 4 }}
+  {{- with .Values.rgwIngress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+{{- if .Values.rgwIngress.tls }}
+  tls:
+  {{- range .Values.rgwIngress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.rgwIngress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+        {{- range .paths }}
+          - path: {{ . }}
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+        {{- end }}
+  {{- end }}
+{{- end }}
